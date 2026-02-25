@@ -276,7 +276,7 @@ def main() -> None:
         raw = load_config(args.config)
         if "preset" in raw or "add_feeds" in raw:
             from pipeline.config import resolve_config
-            config = resolve_config()
+            config = resolve_config(user_config_path=Path(args.config))
         else:
             config = raw
     else:

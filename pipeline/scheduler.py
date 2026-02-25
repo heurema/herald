@@ -17,6 +17,17 @@ _SYSTEMD_TIMER = "claude-news.timer"
 _CRON_MARKER = "# claude-news"
 
 
+def _validate_time(time: str) -> tuple[int, int]:
+    """Parse and validate HH:MM time string. Raises ValueError on bad input."""
+    parts = time.split(":")
+    if len(parts) != 2:
+        raise ValueError(f"Invalid time format '{time}', expected HH:MM")
+    hour, minute = int(parts[0]), int(parts[1])
+    if not (0 <= hour <= 23 and 0 <= minute <= 59):
+        raise ValueError(f"Invalid time '{time}': hour must be 0-23, minute 0-59")
+    return hour, minute
+
+
 def detect_platform() -> str:
     """Return 'macos', 'linux', or 'unsupported'."""
     system = platform.system()
@@ -36,7 +47,7 @@ def _launchd_plist_path() -> Path:
 
 
 def _launchd_plist_content(run_sh_path: str, time: str) -> str:
-    hour, minute = time.split(":")
+    hour, minute = _validate_time(time)
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -144,8 +155,8 @@ def _uninstall_systemd() -> bool:
 # ---------------------------------------------------------------------------
 
 def _crontab_entry(run_sh_path: str, time: str) -> str:
-    hour, minute = time.split(":")
-    return f"{int(minute)} {int(hour)} * * * {run_sh_path}  {_CRON_MARKER}"
+    hour, minute = _validate_time(time)
+    return f"{minute} {hour} * * * {run_sh_path}  {_CRON_MARKER}"
 
 
 def _install_cron(run_sh_path: str, time: str) -> bool:

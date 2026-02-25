@@ -17,7 +17,7 @@ def apply_overlay(base: dict, overlay: dict) -> dict:
         merged.setdefault("feeds", []).append(feed)
     remove_names = set(overlay.get("remove_feeds", []))
     if remove_names:
-        merged["feeds"] = [f for f in merged.get("feeds", []) if f["name"] not in remove_names]
+        merged["feeds"] = [f for f in merged.get("feeds", []) if f.get("name", "") not in remove_names]
     for topic, words in overlay.get("add_keywords", {}).items():
         merged.setdefault("keywords", {})[topic] = words
     for topic in overlay.get("remove_keywords", []):
@@ -31,8 +31,13 @@ def apply_overlay(base: dict, overlay: dict) -> dict:
     return merged
 
 
-def resolve_config(preset_dir: Path | None = None, preset_name: str | None = None) -> dict:
-    user_config_path = _config_file_path()
+def resolve_config(
+    preset_dir: Path | None = None,
+    preset_name: str | None = None,
+    user_config_path: Path | None = None,
+) -> dict:
+    if user_config_path is None:
+        user_config_path = _config_file_path()
     user_config: dict = {}
     if user_config_path.exists():
         with user_config_path.open("r", encoding="utf-8") as f:

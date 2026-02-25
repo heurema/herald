@@ -159,9 +159,11 @@ else
     RUN_SH="$SCRIPT_DIR/pipeline/run.sh"
     chmod +x "$RUN_SH"
 
+    CN_SCHEDULE_TIME="$SCHEDULE_TIME" CN_RUN_SH="$RUN_SH" \
     PYTHONPATH="$SCRIPT_DIR" "$VENV_DIR/bin/python" -c "
+import os
 from pipeline.scheduler import install_scheduler
-ok = install_scheduler('$SCHEDULE_TIME', '$RUN_SH')
+ok = install_scheduler(os.environ['CN_SCHEDULE_TIME'], os.environ['CN_RUN_SH'])
 print('  Scheduler installed' if ok else '  WARNING: Scheduler installation failed')
 "
 fi
