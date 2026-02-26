@@ -3,10 +3,10 @@
   "description": "Daily curated news digest for your domain. One command to set up, zero API keys, works offline after first fetch.",
   "version": "1.0.0",
   "author": {
-    "name": "Real-AI-Engineering"
+    "name": "heurema"
   },
-  "homepage": "https://github.com/Real-AI-Engineering/herald",
-  "repository": "https://github.com/Real-AI-Engineering/herald",
+  "homepage": "https://github.com/heurema/herald",
+  "repository": "https://github.com/heurema/herald",
   "license": "MIT",
   "keywords": ["news-digest", "rss", "daily-digest", "curation", "ai-news"]
 }

@@ -7,7 +7,7 @@ A [Claude Code](https://docs.anthropic.com/en/docs/claude-code) plugin that deli
 ## Install
 
 ```bash
-claude plugin add Real-AI-Engineering/herald
+claude plugin add heurema/herald
 ```
 
 Then in Claude Code:
@@ -140,12 +140,12 @@ rm -rf ~/.config/herald/
 
 ## See Also
 
-Other [Real-AI-Engineering](https://github.com/Real-AI-Engineering) projects:
+Other [heurema](https://github.com/heurema) projects:
 
-- **[sigil](https://github.com/Real-AI-Engineering/sigil)** — risk-adaptive development pipeline with adversarial code review
-- **[teams-field-guide](https://github.com/Real-AI-Engineering/teams-field-guide)** — comprehensive guide to Claude Code multi-agent teams
-- **[codex-partner](https://github.com/Real-AI-Engineering/codex-partner)** — using Codex CLI as second AI alongside Claude Code
-- **[proofpack](https://github.com/Real-AI-Engineering/proofpack)** — proof-carrying CI gate for AI agent changes
+- **[sigil](https://github.com/heurema/sigil)** — risk-adaptive development pipeline with adversarial code review
+- **[teams-field-guide](https://github.com/heurema/teams-field-guide)** — comprehensive guide to Claude Code multi-agent teams
+- **[codex-partner](https://github.com/heurema/codex-partner)** — using Codex CLI as second AI alongside Claude Code
+- **[proofpack](https://github.com/heurema/proofpack)** — proof-carrying CI gate for AI agent changes
 
 ## License
 
