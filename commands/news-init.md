@@ -19,7 +19,8 @@ You are setting up the herald daily news digest pipeline for the user.
    - Match the argument against the topic catalog above (use aliases for fuzzy matching: "k8s"→devops, "js"→typescript, "py"→python).
    - If matched: show what will be added (feeds + keywords), ask user to confirm, then:
      - Read `~/.config/herald/config.yaml`
-     - Append feeds to `add_feeds` (skip duplicates by name or URL)
+     - Resolve preset path via Bash: `echo "${CLAUDE_PLUGIN_ROOT}/presets"`, then Read the preset file.
+     - Append feeds to `add_feeds` (skip duplicates by name or URL against both preset feeds and existing `add_feeds`)
      - Append keywords to `add_keywords` (create key if missing)
      - Write config via Edit tool
      - Confirm: "Added <topic>: N feeds, M keywords. Run /news run to fetch from new sources."

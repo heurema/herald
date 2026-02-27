@@ -22,7 +22,7 @@ Parse the user's input after `/news add`:
 
 1. **Platform heuristics** — check first (no HTTP needed):
    - `github.com/<org>/<repo>` → `https://github.com/<org>/<repo>/releases.atom`
-   - `*.substack.com` → `<domain>/feed`
+   - `*.substack.com` → `https://<domain>/feed`
    - `reddit.com/r/<sub>` → `https://www.reddit.com/r/<sub>.rss`
    - `medium.com/<user>` → `https://medium.com/feed/<user>`
    - `dev.to/<user>` → `https://dev.to/feed/<user>`
@@ -74,10 +74,11 @@ Parse the user's input after `/news add`:
    - normal (tier:2, weight:0.20) — good sources (default)
    - low (tier:3, weight:0.15) — occasional/community
 3. Read `~/.config/herald/config.yaml`
-4. Check: if a feed with same name OR same URL already exists in `add_feeds` — tell user and stop.
-5. Append to `add_feeds` list. If `add_feeds` key doesn't exist yet, create it.
-6. Write the updated config via Edit tool (targeted append, not full rewrite).
-7. Confirm: "Added <name>. Run /news run to fetch articles from this source."
+4. Resolve preset path via Bash: `echo "${CLAUDE_PLUGIN_ROOT}/presets"`, then Read the preset file (name from config's `preset` field, default "ai-engineering").
+5. Check: if a feed with same name OR same URL already exists in preset feeds OR in `add_feeds` — tell user and stop. (Check both to avoid duplicates in the pipeline.)
+6. Append to `add_feeds` list. If `add_feeds` key doesn't exist yet, create it.
+7. Write the updated config via Edit tool (targeted append, not full rewrite).
+8. Confirm: "Added <name>. Run /news run to fetch articles from this source."
 
 ## Topic Flow
 
@@ -88,10 +89,11 @@ If input matches a topic name or alias from the catalog above:
 1. Show what will be added: keywords list + feed names with URLs.
 2. Ask: "Add all feeds + keywords? [all / keywords only / let me pick]"
 3. Read `~/.config/herald/config.yaml`
-4. For each selected feed: check if name or URL already exists in `add_feeds` — skip duplicates silently and note them.
-5. Add to `add_keywords` (create key if missing) and `add_feeds` as selected.
-6. Write config via Edit tool.
-7. Confirm: "Added <topic>: N feeds, M keywords. Run /news run to see results."
+4. Resolve preset path via Bash: `echo "${CLAUDE_PLUGIN_ROOT}/presets"`, then Read the preset file.
+5. For each selected feed: check if name or URL already exists in preset feeds OR in `add_feeds` — skip duplicates silently and note them.
+6. Add to `add_keywords` (create key if missing) and `add_feeds` as selected.
+7. Write config via Edit tool.
+8. Confirm: "Added <topic>: N feeds, M keywords. Run /news run to see results."
 
 If input does NOT match any topic: "Unknown topic '<input>'. Available: rust, devops, golang, typescript, security, python, data. Or paste a URL."
 
