@@ -104,7 +104,7 @@ def _fetch_with_retry(client: httpx.Client, url: str, retries: int = 3) -> httpx
     return None
 
 
-def fetch_rss_feed(feed: dict) -> list[RawItem]:
+def fetch_rss_feed(feed: dict, *, timeout: int = 10, retries: int = 3) -> list[RawItem]:
     """Fetch and parse a single RSS/Atom feed. Returns empty list on failure."""
     import fastfeedparser
 
@@ -113,8 +113,8 @@ def fetch_rss_feed(feed: dict) -> list[RawItem]:
     items: list[RawItem] = []
 
     try:
-        with httpx.Client(timeout=10, follow_redirects=True) as client:
-            resp = _fetch_with_retry(client, url)
+        with httpx.Client(timeout=timeout, follow_redirects=True) as client:
+            resp = _fetch_with_retry(client, url, retries=retries)
             if resp is None:
                 return []
             # Guard against oversized responses (10 MB limit)
@@ -155,14 +155,14 @@ def fetch_rss_feed(feed: dict) -> list[RawItem]:
     return items
 
 
-def fetch_hn_stories(min_points: int = 100, limit: int = 200) -> list[RawItem]:
+def fetch_hn_stories(min_points: int = 100, limit: int = 200, *, timeout: int = 10, retries: int = 3) -> list[RawItem]:
     """Fetch HN front-page stories via Algolia API, filter by min_points."""
     api_url = f"https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage={limit}"
     items: list[RawItem] = []
 
     try:
-        with httpx.Client(timeout=10, follow_redirects=True) as client:
-            resp = _fetch_with_retry(client, api_url)
+        with httpx.Client(timeout=timeout, follow_redirects=True) as client:
+            resp = _fetch_with_retry(client, api_url, retries=retries)
             if resp is None:
                 return []
             data = resp.json()
@@ -223,7 +223,7 @@ def fetch_tavily(queries: list[str]) -> list[RawItem]:
     return items
 
 
-def collect_all(config: dict) -> list[RawItem]:
+def collect_all(config: dict, *, timeout: int = 10, retries: int = 3) -> list[RawItem]:
     """Orchestrate all fetchers. Per-source isolation with try/except. Prints stats."""
     all_items: list[RawItem] = []
 
@@ -231,7 +231,7 @@ def collect_all(config: dict) -> list[RawItem]:
     feeds = config.get("feeds", [])
     for feed in feeds:
         try:
-            items = fetch_rss_feed(feed)
+            items = fetch_rss_feed(feed, timeout=timeout, retries=retries)
             print(f"[collect] {feed['name']}: {len(items)} items")
             all_items.extend(items)
         except Exception as exc:
@@ -239,7 +239,7 @@ def collect_all(config: dict) -> list[RawItem]:
 
     # HN via Algolia
     try:
-        hn_items = fetch_hn_stories(min_points=100, limit=200)
+        hn_items = fetch_hn_stories(min_points=100, limit=200, timeout=timeout, retries=retries)
         print(f"[collect] Hacker News (Algolia): {len(hn_items)} items")
         all_items.extend(hn_items)
     except Exception as exc:
