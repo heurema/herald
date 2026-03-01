@@ -8,6 +8,13 @@ You are presenting the user's daily news digest from herald.
 
 ## Steps
 
+0. **Check for --demo flag**: If the user's message includes `--demo`:
+   - Check venv: `test -f "${CLAUDE_PLUGIN_ROOT}/pipeline/.venv/bin/python"`
+   - If no venv: "Herald is not set up yet. Run `/news init` first."
+   - Run: `cd "${CLAUDE_PLUGIN_ROOT}/pipeline" && .venv/bin/python -m pipeline.demo`
+   - Display the stdout output
+   - STOP here — do not continue to remaining steps
+
 1. **Find latest digest**: Check these paths in order:
    - `~/.local/share/herald/data/digests/$(date +%Y-%m-%d).md` (today)
    - Yesterday's date as fallback
