@@ -1,0 +1,51 @@
+name: Feature Request
+description: Propose a new feature or improvement for Herald
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for taking the time to suggest an improvement. Please describe your idea clearly."
+  - type: textarea
+    id: description
+    attributes:
+      label: What would you like Herald to do?
+      description: "A clear description of the feature. What problem does it solve?"
+      placeholder: "I would like Herald to..."
+    validations:
+      required: true
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: "Describe the concrete workflow or situation where this feature would help you."
+      placeholder: "When I do X, I currently have to Y. With this feature I could Z instead."
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: "What workarounds or alternative approaches have you tried or considered?"
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which area of Herald does this affect?
+      options:
+        - Feed fetching
+        - Digest generation / scoring
+        - Scheduling
+        - CLI commands
+        - Configuration
+        - Documentation
+        - Other
+    validations:
+      required: false
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: "Links, examples from other tools, mockups, or anything else that helps."
+    validations:
+      required: false

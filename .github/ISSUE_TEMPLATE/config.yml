@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://skill7.dev/devtools/herald
+    about: Check the docs before filing
+  - name: FAQ
+    url: https://github.com/heurema/herald/blob/main/docs/FAQ.md
+    about: Common questions answered here

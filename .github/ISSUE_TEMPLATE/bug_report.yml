@@ -1,0 +1,90 @@
+name: Bug Report
+description: Report a bug in Herald
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for reporting! Please fill in the details below."
+  - type: input
+    id: version
+    attributes:
+      label: Herald version
+      description: "Check plugin.json or run /news digest --version"
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - macOS
+        - Linux
+        - Windows (WSL)
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: python_version
+    attributes:
+      label: Python version
+      description: "Output of: python3 --version"
+      placeholder: "3.12.3"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: "Clear description of the bug"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: "Minimal steps to trigger the bug"
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: dropdown
+    id: command
+    attributes:
+      label: Which Herald command triggers the bug?
+      options:
+        - /news init
+        - /news add
+        - /news sources
+        - /news digest
+        - /news digest --demo
+        - /news run
+        - /news stop
+        - Scheduler (background fetch)
+        - Other / not command-specific
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: "Paste error output, scheduler logs, lock file errors, etc."
+      render: shell
+    validations:
+      required: false
+  - type: textarea
+    id: config
+    attributes:
+      label: Config (optional)
+      description: "Paste relevant parts of ~/.config/herald/config.yaml — remove any private URLs or tokens"
+      render: yaml
+    validations:
+      required: false
