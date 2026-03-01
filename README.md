@@ -4,6 +4,8 @@ Daily curated news digest for your domain. One command to set up, zero API keys,
 
 A [Claude Code](https://docs.anthropic.com/en/docs/claude-code) plugin that delivers a daily filtered top-10 digest — zero cost, zero credentials, fully local.
 
+![Herald Demo](docs/assets/herald-demo.gif)
+
 ## Install
 
 <!-- INSTALL:START — auto-synced from emporium/INSTALL_REFERENCE.md -->
