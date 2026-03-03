@@ -175,8 +175,27 @@ def test_generate_digest_topic_sort_order():
          "extra": {}, "is_new": False}
     ]
     output = generate_digest(items, "2024-01-01", {"total": 4, "new": 0, "dupes": 0})
+    # Headers now include score: "## Aaa (score: 0.72)" — search by prefix
     pos_aaa = output.find("## Aaa")
     pos_zzz = output.find("## Zzz")
     # "aaa" has 3 items (freq=0.75), "zzz" has 1 (freq=0.25) -> aaa should be first
     if pos_aaa != -1 and pos_zzz != -1:
         assert pos_aaa < pos_zzz
+
+
+def test_generate_digest_section_header_has_score():
+    from pipeline.analyze import generate_digest
+    import re
+    items = [{
+        "title": "Test item",
+        "url": "https://example.com/1",
+        "source": "test",
+        "topics": ["ai"],
+        "score": 1.0,
+        "published": "2024-01-01T10:00:00",
+        "extra": {},
+        "is_new": False,
+    }]
+    output = generate_digest(items, "2024-01-01", {"total": 1, "new": 0, "dupes": 0})
+    # Section header should include score value, e.g. "## Ai (score: 0.60)"
+    assert re.search(r"## Ai \(score: \d+\.\d+\)", output)

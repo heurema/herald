@@ -144,7 +144,7 @@ def generate_digest(items: list[dict], date: str, stats: dict, *, source_weights
 
     # Sort sections by topic_score descending
     try:
-        from pipeline.topics import topic_score  # type: ignore
+        from pipeline.topics import topic_score, hours_old  # type: ignore
 
         total_items = len(items) if items else 1
         # Initial sort by item count descending to assign rank by position
@@ -153,19 +153,23 @@ def generate_digest(items: list[dict], date: str, stats: dict, *, source_weights
         for section_index, (topic_name, section_items) in enumerate(sections_by_count):
             rank = 1.0 / (1 + section_index)
             freq = len(section_items) / total_items
-            avg_hours = sum(_hours_old(it) for it in section_items) / len(section_items)
+            avg_hours = sum(hours_old(it) for it in section_items) / len(section_items)
             hotness = max(0.0, 1.0 - avg_hours / 48)
             ts = topic_score(rank=rank, freq=freq, hotness=hotness)
             scored_sections.append((ts, topic_name, section_items))
         # Sort by score desc, topic_name asc as tie-break
         scored_sections.sort(key=lambda x: (-x[0], x[1]))
-        sorted_sections: list[tuple[str, list[dict]]] = [(name, sec) for _, name, sec in scored_sections]
+        sorted_sections: list[tuple[str, list[dict], float]] = [(name, sec, sc) for sc, name, sec in scored_sections]
     except ImportError:
-        # Fallback: sort alphabetically
-        sorted_sections = sorted(grouped.items(), key=lambda kv: kv[0])
+        # Fallback: sort alphabetically, no score available
+        sorted_sections = [(name, sec, 0.0) for name, sec in sorted(grouped.items(), key=lambda kv: kv[0])]
 
-    for topic, topic_items in sorted_sections:
-        lines.append(f"## {topic.replace('_', ' ').title()}")
+    for topic, topic_items, section_score in sorted_sections:
+        header = topic.replace("_", " ").title()
+        if section_score > 0:
+            lines.append(f"## {header} (score: {section_score:.2f})")
+        else:
+            lines.append(f"## {header}")
         lines.append("")
         for idx, item in enumerate(topic_items, 1):
             title = item.get("title", "Untitled")
@@ -195,25 +199,6 @@ def generate_digest(items: list[dict], date: str, stats: dict, *, source_weights
 
     return "\n".join(lines)
 
-
-# ---------------------------------------------------------------------------
-# Hours-old helper
-# ---------------------------------------------------------------------------
-
-def _hours_old(item: dict) -> float:
-    """Compute hours between item timestamp and now."""
-    now = datetime.now(timezone.utc)
-    ts_str = item.get("published") or item.get("collected_at") or ""
-    if not ts_str:
-        return 0.0
-    try:
-        dt = datetime.fromisoformat(ts_str)
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        delta = now - dt
-        return max(delta.total_seconds() / 3600, 0.0)
-    except (ValueError, TypeError):
-        return 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -303,11 +288,24 @@ def main() -> None:
 
     # Stage 2: Keyword filter — drop items with no matching topic
     try:
-        from pipeline.topics import parse_topic_config, match_topics
+        from pipeline.topics import parse_topic_config, match_topics, hours_old as _get_hours_old
         topic_groups = parse_topic_config(config.get("keywords", {}))
         use_topics = True
     except ImportError:
         use_topics = False
+        from datetime import datetime, timezone as _tz
+
+        def _get_hours_old(it: dict) -> float:  # type: ignore[misc]
+            ts = it.get("published") or it.get("collected_at") or ""
+            if not ts:
+                return 0.0
+            try:
+                dt = datetime.fromisoformat(ts)
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=_tz.utc)
+                return max((datetime.now(_tz.utc) - dt).total_seconds() / 3600, 0.0)
+            except (ValueError, TypeError):
+                return 0.0
 
     filtered: list[dict] = []
     for item_obj in deduped:
@@ -326,7 +324,7 @@ def main() -> None:
     # Stage 3: Signal scoring
     scored: list[dict] = []
     for item in filtered:
-        item["hours_old"] = _hours_old(item)
+        item["hours_old"] = _get_hours_old(item)
         item["is_release"] = item.get("extra", {}).get("is_release", False)
         item["keyword_density"] = keyword_density(item.get("title", ""), keywords)
         item["score"] = signal_score(item, source_weights)
