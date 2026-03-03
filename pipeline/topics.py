@@ -32,7 +32,7 @@ def parse_rules(words: list[str]) -> list[Rule]:
     """
     rules: list[Rule] = []
     for word in words:
-        if word.startswith("/") and word.endswith("/") and len(word) >= 2:
+        if word.startswith("/") and word.endswith("/") and len(word) > 2:
             pattern = word[1:-1]
             if len(pattern) > _MAX_REGEX_LEN:
                 warnings.warn(

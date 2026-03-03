@@ -348,7 +348,7 @@ def main() -> None:
 
     # Generate digest
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    digest = generate_digest(final, today, stats)
+    digest = generate_digest(final, today, stats, source_weights=source_weights)
 
     # Atomic write
     if args.output:
