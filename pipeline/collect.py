@@ -69,6 +69,7 @@ class RawItem:
     published: str
     extra: dict = field(default_factory=dict)
     collected_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    is_new: bool = True
 
     def to_dict(self) -> dict:
         return {
@@ -78,6 +79,7 @@ class RawItem:
             "published": self.published,
             "extra": self.extra,
             "collected_at": self.collected_at,
+            "is_new": self.is_new,
         }
 
 

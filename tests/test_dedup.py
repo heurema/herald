@@ -52,3 +52,24 @@ def test_dedup_items_removes_seen():
     result = dedup_items(items, seen)
     assert len(result) == 1
     assert result[0].url == "https://example.com/new"
+
+
+def test_dedup_items_sets_is_new():
+    import tempfile, pathlib
+    from pipeline.collect import RawItem
+    from pipeline.dedup import SeenUrls, dedup_items
+
+    items = [
+        RawItem(url="https://a.com/1", title="First", source="test",
+                published="2024-01-01T10:00:00", extra={}, collected_at="2024-01-01T10:00:00"),
+        RawItem(url="https://a.com/2", title="Second", source="test",
+                published="2024-01-01T10:00:00", extra={}, collected_at="2024-01-01T10:00:00"),
+    ]
+    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+        seen_path = pathlib.Path(f.name)
+    try:
+        seen = SeenUrls(seen_path)
+        result = dedup_items(items, seen)
+        assert all(item.is_new is True for item in result)
+    finally:
+        seen_path.unlink(missing_ok=True)

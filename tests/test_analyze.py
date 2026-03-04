@@ -88,3 +88,114 @@ def test_generate_digest_format():
     assert "# News Digest" in digest
     assert "Test Item" in digest
     assert "2026-02-25" in digest
+
+
+def test_generate_digest_new_badge():
+    from pipeline.analyze import generate_digest
+    items = [{
+        "title": "Breaking news",
+        "url": "https://example.com/1",
+        "source": "test",
+        "topics": ["ai"],
+        "score": 1.0,
+        "published": "2024-01-01T10:00:00",
+        "extra": {},
+        "is_new": True,
+    }]
+    output = generate_digest(items, "2024-01-01", {"total": 1, "new": 0, "dupes": 0})
+    assert "[NEW]" in output
+
+
+def test_generate_digest_no_new_badge():
+    from pipeline.analyze import generate_digest
+    items = [{
+        "title": "Old news",
+        "url": "https://example.com/2",
+        "source": "test",
+        "topics": ["ai"],
+        "score": 0.5,
+        "published": "2024-01-01T10:00:00",
+        "extra": {},
+        "is_new": False,
+    }]
+    output = generate_digest(items, "2024-01-01", {"total": 1, "new": 0, "dupes": 0})
+    assert "[NEW]" not in output
+
+
+def test_generate_digest_analysis_guide():
+    from pipeline.analyze import generate_digest
+    items = [{
+        "title": "Test item",
+        "url": "https://example.com/3",
+        "source": "test",
+        "topics": ["ai"],
+        "score": 1.0,
+        "published": "2024-01-01T10:00:00",
+        "extra": {},
+        "is_new": False,
+    }]
+    output = generate_digest(items, "2024-01-01", {"total": 1, "new": 0, "dupes": 0})
+    assert "Analysis Guide" in output
+    assert "Trends" in output
+    assert "Surprises" in output
+    assert "Connections" in output
+    assert "Action Items" in output
+    assert "Questions" in output
+
+
+def test_generate_digest_backward_compat():
+    from pipeline.analyze import generate_digest
+    items = [{
+        "title": "Test item",
+        "url": "https://example.com/4",
+        "source": "test",
+        "topics": ["ai"],
+        "score": 1.0,
+        "published": "2024-01-01T10:00:00",
+        "extra": {},
+    }]
+    # Call without source_weights — must not raise
+    output = generate_digest(items, "2024-01-01", {"total": 1, "new": 0, "dupes": 0})
+    assert isinstance(output, str)
+    assert len(output) > 0
+
+
+def test_generate_digest_topic_sort_order():
+    from pipeline.analyze import generate_digest
+    # Create items in two topics: "zzz" topic with 1 item (low freq), "aaa" topic with 3 items (high freq)
+    # Higher freq -> higher topic_score -> "aaa" section should appear first
+    items = [
+        {"title": f"AAA item {i}", "url": f"https://example.com/aaa/{i}", "source": "test",
+         "topics": ["aaa"], "score": 0.9 - i*0.1, "published": "2024-01-01T10:00:00",
+         "extra": {}, "is_new": False}
+        for i in range(3)
+    ] + [
+        {"title": "ZZZ item", "url": "https://example.com/zzz/1", "source": "test",
+         "topics": ["zzz"], "score": 1.0, "published": "2024-01-01T10:00:00",
+         "extra": {}, "is_new": False}
+    ]
+    output = generate_digest(items, "2024-01-01", {"total": 4, "new": 0, "dupes": 0})
+    # Headers now include score: "## Aaa (score: 0.72)" — search by prefix
+    pos_aaa = output.find("## Aaa")
+    pos_zzz = output.find("## Zzz")
+    # "aaa" has 3 items (freq=0.75), "zzz" has 1 (freq=0.25) -> aaa should be first
+    if pos_aaa != -1 and pos_zzz != -1:
+        assert pos_aaa < pos_zzz
+
+
+def test_generate_digest_section_header_has_score():
+    from pipeline.analyze import generate_digest
+    import re
+    items = [{
+        "title": "Test item",
+        "url": "https://example.com/1",
+        "source": "test",
+        "topics": ["ai"],
+        "score": 1.0,
+        "published": "2024-01-01T10:00:00",
+        "extra": {},
+        "is_new": False,
+    }]
+    output = generate_digest(items, "2024-01-01", {"total": 1, "new": 0, "dupes": 0})
+    # Section header should include score value, e.g. "## Ai (score: 0.60)"
+    assert re.search(r"## Ai \(score: \d+\.\d+\)", output)

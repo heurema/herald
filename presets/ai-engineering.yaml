@@ -39,6 +39,12 @@ feeds:
     weight: 0.20
     type: rss
 
+  - name: "AINews by Latent Space"
+    url: "https://www.latent.space/feed?section=ainews"
+    tier: 1
+    weight: 0.25
+    type: rss
+
   # Tier 2 — Weekly synthesis, HIGH SNR
   - name: "Import AI"
     url: "https://importai.substack.com/feed"

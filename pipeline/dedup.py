@@ -152,6 +152,7 @@ def dedup_items(items: list[RawItem], seen: SeenUrls) -> list[RawItem]:
         if is_title_duplicate(item.title, accepted_titles):
             continue
         # Accept this item
+        item.is_new = True
         seen.add(item.url)
         accepted_titles.append(item.title)
         accepted.append(item)

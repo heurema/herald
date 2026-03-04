@@ -9,13 +9,28 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from pipeline.analyze import (
-    _hours_old,
     apply_hard_cap,
     generate_digest,
     keyword_density,
     keyword_match,
     signal_score,
 )
+try:
+    from pipeline.topics import hours_old as _hours_old  # type: ignore
+except ImportError:
+    from datetime import datetime, timezone as _tz  # noqa: F811
+
+    def _hours_old(item: dict) -> float:  # type: ignore[misc]
+        ts = item.get("published") or item.get("collected_at") or ""
+        if not ts:
+            return 0.0
+        try:
+            dt = datetime.fromisoformat(ts)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=_tz.utc)
+            return max((datetime.now(_tz.utc) - dt).total_seconds() / 3600, 0.0)
+        except (ValueError, TypeError):
+            return 0.0
 from pipeline.collect import collect_all, normalize_url
 from pipeline.dedup import SeenUrls, dedup_items
 
@@ -60,10 +75,20 @@ def run_demo(config: dict | None = None) -> str:
     deduped = dedup_items(items, dummy_seen)
 
     # Step 6: keyword filter (only if keywords configured)
+    try:
+        from pipeline.topics import parse_topic_config, match_topics
+        topic_groups = parse_topic_config(config.get("keywords", {}))
+        use_topics = True
+    except ImportError:
+        use_topics = False
+
     if keywords:
         filtered: list[dict] = []
         for item_obj in deduped:
-            topics = keyword_match(item_obj.title, keywords)
+            if use_topics:
+                topics = match_topics(item_obj.title, topic_groups)
+            else:
+                topics = keyword_match(item_obj.title, keywords)
             if not topics:
                 continue
             d = item_obj.to_dict()
@@ -100,7 +125,7 @@ def run_demo(config: dict | None = None) -> str:
         "kept": kept,
         "cost": 0.0,
     }
-    digest = generate_digest(final, date, stats)
+    digest = generate_digest(final, date, stats, source_weights=source_weights)
 
     # Replace title line with demo banner
     digest = digest.replace(
