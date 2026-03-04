@@ -293,7 +293,7 @@ def main() -> None:
         use_topics = True
     except ImportError:
         use_topics = False
-        from datetime import datetime, timezone as _tz
+        _tz = timezone
 
         def _get_hours_old(it: dict) -> float:  # type: ignore[misc]
             ts = it.get("published") or it.get("collected_at") or ""
