@@ -77,7 +77,7 @@ Herald v2 uses a 4-stage pipeline with SQLite storage:
 
 1. **Collect** — fetches RSS/Atom feeds and HN front-page stories via public APIs. Optional Tavily adapter for web search.
 2. **Ingest** — UPSERT articles with URL canonicalization, deduplication, topic assignment, and cross-source mention tracking.
-3. **Cluster** — groups related articles into stories using `SequenceMatcher` title similarity with 4 merge guards (threshold, time gap, title length, word overlap). Canonical article re-election with hysteresis.
+3. **Cluster** — groups related articles into stories using `SequenceMatcher` title similarity with 4 merge guards (threshold, time gap, title length, version/number conflict). Canonical article re-election with hysteresis.
 4. **Project** — generates a Markdown brief with YAML frontmatter, stories grouped by type (release, research, tutorial, opinion, news), scored and ranked.
 
 ### Data model
@@ -90,8 +90,8 @@ sources → articles → mentions (cross-source)
 
 ### Scoring
 
-- **Article score**: `source_weight × (1 + log₂(points + 1)) × density × recency × type_boost`
-- **Story score**: `max(article_scores) × (1 + 0.1 × (source_count - 1)) × momentum`
+- **Article score**: `source_weight + min(points/500, 3.0) + keyword_density * 0.2 + release_boost`
+- **Story score**: `max(article_scores) + log(source_count) * 0.3 + momentum`
 
 ## Configuration
 
@@ -145,6 +145,22 @@ schedule:
 ## Privacy
 
 Herald fetches only public RSS feeds and the HN Algolia API. All data stays on your machine under `~/.herald/`. No telemetry, no cloud sync. Optional Tavily adapter requires a free API key but is not needed for core functionality.
+
+## Feedback
+
+Found a bug? All heurema plugins ship with [Reporter](https://github.com/heurema/reporter) - file issues without leaving Claude Code:
+
+```bash
+claude plugin install reporter@emporium
+/report bug
+```
+
+## See also
+
+- [Herald v2: Local-First News Intelligence for AI Agents](https://ctxt.dev/posts/en/herald-v2-local-news-intelligence) - blog post with architecture deep-dive
+- [emporium](https://github.com/heurema/emporium) - plugin marketplace
+- [signum](https://github.com/heurema/signum) - contract-first AI dev pipeline
+- [reporter](https://github.com/heurema/reporter) - issue filing from Claude Code
 
 ## License
 
