@@ -11,6 +11,7 @@ class Source:
     url: str | None = None
     weight: float = 0.2
     category: str = "community"  # community | official | aggregator
+    type: str = "rss"  # rss | hn | tavily
 
 
 @dataclass

@@ -63,6 +63,19 @@ def run_pipeline(
     error_text: str | None = None
 
     try:
+        # Stage 0: sync sources to DB
+        for src in config.sources:
+            db.execute(
+                """INSERT INTO sources (id, name, url, weight, category)
+                   VALUES (?, ?, ?, ?, ?)
+                   ON CONFLICT(id) DO UPDATE SET
+                     name = excluded.name,
+                     url = excluded.url,
+                     weight = excluded.weight,
+                     category = excluded.category""",
+                (src.id, src.name, src.url, src.weight, src.category),
+            )
+
         # Stage 1: collect
         sources_dict = {s.id: s for s in config.sources}
         raw_items = collect_all(config.sources, adapter_map=adapter_map)

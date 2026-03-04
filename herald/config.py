@@ -31,13 +31,22 @@ class HeraldConfig:
     topics: dict = field(default_factory=dict)
 
 
+_TYPE_ALIASES = {
+    "hn_algolia": "hn",
+    "hacker_news": "hn",
+}
+
+
 def _parse_source(raw: dict) -> Source:
+    raw_type = raw.get("type", "rss")
+    adapter_type = _TYPE_ALIASES.get(raw_type, raw_type)
     return Source(
         id=raw["id"],
         name=raw["name"],
         url=raw.get("url"),
         weight=raw.get("weight", 0.2),
         category=raw.get("category", "community"),
+        type=adapter_type,
     )
 
 

@@ -97,7 +97,8 @@ def cmd_run(args: argparse.Namespace) -> int:
         db_path = data_dir / "herald.db"
         db = Database(db_path)
         try:
-            result = run_pipeline(config, db, data_dir=data_dir)
+            adapter_map = {s.id: s.type for s in config.sources}
+            result = run_pipeline(config, db, adapter_map=adapter_map, data_dir=data_dir)
         finally:
             db.close()
 

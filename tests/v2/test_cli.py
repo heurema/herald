@@ -105,6 +105,7 @@ def test_run_executes_pipeline(tmp_path, capsys):
     config_path.write_text("sources: []\n", encoding="utf-8")
 
     mock_config = MagicMock()
+    mock_config.sources = []
     mock_db = MagicMock()
     mock_result = MagicMock()
     mock_result.run_id = 42
@@ -120,7 +121,9 @@ def test_run_executes_pipeline(tmp_path, capsys):
 
     mock_load.assert_called_once_with(config_path)
     MockDB.assert_called_once_with(data_dir / "herald.db")
-    mock_pipeline.assert_called_once_with(mock_config, mock_db, data_dir=data_dir)
+    mock_pipeline.assert_called_once_with(
+        mock_config, mock_db, adapter_map={}, data_dir=data_dir
+    )
     mock_db.close.assert_called_once()
 
     captured = capsys.readouterr()
