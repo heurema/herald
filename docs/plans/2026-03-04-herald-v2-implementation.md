@@ -101,6 +101,21 @@ def test_database_transaction_rollback():
             pass
         row = db.execute("SELECT id FROM sources WHERE id='s1'").fetchone()
         assert row is None
+
+
+def test_fts5_available():
+    """FTS5 extension works — insert and match."""
+    with tempfile.TemporaryDirectory() as d:
+        db = Database(Path(d) / "test.db")
+        db.execute("INSERT INTO sources (id, name, weight) VALUES ('s1', 'Test', 0.5)")
+        db.execute("""INSERT INTO articles (id, url_original, url_canonical, title,
+            origin_source_id, collected_at, score_base, scored_at, story_type)
+            VALUES ('a1', 'https://x.com', 'https://x.com', 'Python release notes',
+            's1', 1000, 0.5, 1000, 'news')""")
+        results = db.execute(
+            "SELECT title FROM articles_fts WHERE articles_fts MATCH 'python'"
+        ).fetchall()
+        assert len(results) == 1
 ```
 
 **Step 4: Run tests — verify they fail**
@@ -1431,6 +1446,45 @@ def test_full_lifecycle(tmp_path, mock_http):
     # 6. Recluster
     recluster(db, since_days=7, config=config.clustering)
     # No crash = success
+
+
+def test_cli_json_envelope(tmp_path):
+    """--format json returns stable envelope."""
+    init_herald(tmp_path, preset="ai-engineering")
+    # run minimal pipeline with mock data
+    result = subprocess.run(
+        ["python", "-m", "herald", "status", "--format", "json"],
+        capture_output=True, text=True, cwd=str(tmp_path))
+    data = json.loads(result.stdout)
+    assert data["schema_version"] == 1
+    assert "generated_at" in data
+    assert "command" in data
+    assert "data" in data
+
+
+def test_clustering_golden(tmp_db):
+    """Golden test: known articles → expected groupings."""
+    articles = [
+        ("a1", "Python 3.14 released with pattern matching improvements", "hn", "python"),
+        ("a2", "Python 3.14 released with exciting pattern matching", "rss1", "python"),
+        ("a3", "Rust 2.0 brings major breaking changes", "hn", "rust"),
+        ("a4", "Kubernetes 1.32 adds new scheduling features", "hn", "kubernetes"),
+        ("a5", "Rust 2.0 announced with breaking changes and new features", "rss1", "rust"),
+    ]
+    for aid, title, src, topic in articles:
+        _insert_article(tmp_db, aid, title, src, topic=topic)
+    cluster(tmp_db, ClusterConfig())
+    stories = tmp_db.execute("SELECT COUNT(*) FROM stories").fetchone()[0]
+    assert stories == 3  # python(a1+a2), rust(a3+a5), k8s(a4)
+    # Verify python story has 2 articles
+    python_story = tmp_db.execute("""
+        SELECT s.id FROM stories s
+        JOIN story_articles sa ON sa.story_id = s.id
+        JOIN articles a ON a.id = sa.article_id
+        WHERE a.title LIKE '%Python%'
+        GROUP BY s.id HAVING COUNT(*) = 2
+    """).fetchone()
+    assert python_story is not None
 ```
 
 **Step 2: Run all v2 tests**
@@ -1457,22 +1511,39 @@ git commit -m "feat(v2): integration test and version bump to 2.0.0"
 
 ---
 
-## Dependency Graph
+## Dependency Graph (arbiter-corrected)
 
 ```
-Task 1 (DB) ──────────┐
-Task 2 (URL) ─────────┤
-Task 3 (Models/ULID) ─┤
-Task 4 (Config) ──────┼──→ Task 7 (Ingest) ──→ Task 9 (Clustering) ──→ Task 12 (Pipeline)
-Task 5 (Scoring) ─────┤                                                      │
-Task 6 (Collect) ─────┘                                                      ▼
-Task 8 (Topics) ───────────────────────────────────→ Task 10 (Project) → Task 11 (CLI) → Task 13 (Commands)
-                                                                                          Task 14 (Init)
-                                                                                          Task 15 (Integration)
+Task 3 (Models/ULID) ──┐
+                        ├──→ Task 1 (DB) ──┐
+                        ├──→ Task 2 (URL)   ├──→ Task 8 (Topics) ──→ Task 7 (Ingest) ──→ Task 9 (Clustering)
+                        ├──→ Task 4 (Config)┘                                                    │
+                        ├──→ Task 5 (Scoring)                                                    ▼
+                        └──→ Task 6 (Collect, needs 4)    Task 14 (Init, needs 1+4) ──→ Task 12 (Pipeline)
+                                                          Task 10 (Project, needs 1+9) → Task 11 (CLI)
+                                                          Task 13 (Commands), Task 15 (Integration)
 ```
 
-Tasks 1-6 can run in parallel (no dependencies).
-Tasks 7-8 depend on 1-6.
-Task 9 depends on 7-8.
-Tasks 10-11 depend on 1, 9.
-Tasks 12-15 depend on all above.
+**Execution order:**
+1. Task 3 (Models) — true foundation, everything imports from here
+2. Tasks 1, 2, 4, 5 — parallel (DB, URL, Config, Scoring)
+3. Task 6 (Collect) — depends on 3 + 4
+4. Task 8 (Topics) — depends on 1
+5. Task 7 (Ingest) — depends on 1, 2, 3, 5, 8
+6. Task 9 (Clustering) — depends on 7
+7. Tasks 10, 14 — parallel (Project needs 1+9, Init needs 1+4)
+8. Tasks 11, 12 — parallel (CLI needs 10, Pipeline needs 7+9+10)
+9. Tasks 13, 15 — final (Commands needs 11, Integration needs all)
+
+**Key arbiter corrections:**
+- Models (3) is the true prerequisite, not fully parallel with 1-6
+- Topics (8) must come before Ingest (7) — ingest calls topic extraction
+- Init (14) moved earlier (after DB + Config)
+- FTS5 availability check added to Task 1
+
+## Out of Scope (deferred)
+
+- CI/CD pipeline configuration
+- v1 deprecation/removal (after v2 stable)
+- Data migration from v1 JSONL
+- `pyproject.toml` — add minimal for metadata when v2 stable
