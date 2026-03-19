@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'DIGEST=\"${XDG_DATA_HOME:-$HOME/.local/share}/herald/data/digests/$(date +%Y-%m-%d).md\"; if [ -f \"$DIGEST\" ]; then echo \"Fresh news digest available for today. Run /news-digest to read.\"; fi'",
+            "command": "bash -c 'DB=\"${HERALD_DATA_DIR:-$HOME/.herald}/herald.db\"; [ -f \"$DB\" ] && python3 -c \"import sqlite3,time; db=sqlite3.connect(\\\"$DB\\\"); r=db.execute(\\\"SELECT finished_at FROM pipeline_runs ORDER BY id DESC LIMIT 1\\\").fetchone(); fresh=r and (time.time()-r[0])<86400; print(\\\"Herald digest ready — /news-digest to read.\\\") if fresh else print(\\\"Herald digest stale (>24h). Run /news-run to update.\\\")\" 2>/dev/null'",
             "timeout": 2
           }
         ]
