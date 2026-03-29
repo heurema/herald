@@ -8,12 +8,16 @@ You are showing and managing the user's herald sources.
 
 ## Preflight
 
-1. Check `~/.herald/config.yaml` exists. If not: "Run `/news-init` first."
+1. Find the herald data directory:
+   ```bash
+   cd "${CLAUDE_PLUGIN_ROOT}" && PYTHONPATH=. python3 -c "from herald.cli import _default_data_dir; print(_default_data_dir())"
+   ```
+   Check `config.yaml` exists there (defaults to `~/.local/share/herald/`; use `--data-dir` or `HERALD_DATA_DIR` to override). If not: "Run `/news-init` first."
 2. Read config. If YAML parse fails: "Config file has invalid YAML."
 
 ## Default: show all sources
 
-1. Read `~/.herald/config.yaml`
+1. Read `config.yaml` from the herald data directory (see Preflight)
 2. Display sources grouped by category:
 
 ```
@@ -41,7 +45,7 @@ Total: N sources
 
 ## Config rules
 
-- Only edit `~/.herald/config.yaml`
+- Only edit the `config.yaml` in the herald data directory (see Preflight)
 - Use Edit tool for targeted changes
 - Preserve YAML comments
 - Always confirm before writing

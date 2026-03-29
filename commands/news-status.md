@@ -8,7 +8,11 @@ You are showing the user's herald status.
 
 ## Steps
 
-1. **Check setup**: Verify `~/.herald/herald.db` exists. If not: "Run `/news-init` first."
+1. **Check setup**: Find the herald data directory:
+   ```bash
+   cd "${CLAUDE_PLUGIN_ROOT}" && PYTHONPATH=. python3 -c "from herald.cli import _default_data_dir; print(_default_data_dir())"
+   ```
+   Verify `herald.db` exists there (defaults to `~/.local/share/herald/`; use `--data-dir` or `HERALD_DATA_DIR` to override). If not: "Run `/news-init` first."
 
 2. **Show status**:
 
