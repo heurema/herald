@@ -58,11 +58,13 @@ LASTRUN
 
 # Phase 1: Collect
 RAW_FILE="$DATA_DIR/data/raw/$DATE.jsonl"
+PHASE_FAILED=false
 PYTHONPATH="$PLUGIN_DIR/src" python3 "$SCRIPT_DIR/collect.py" \
     --config "$CONFIG_DIR/config.yaml" \
     --output "$RAW_FILE" \
     2> >(filter_log >> "$LOG") || {
     echo "$(date -Iseconds) ERROR: collect.py failed" >> "$LOG"
+    PHASE_FAILED=true
 }
 
 # Phase 2: Analyze (only if raw file exists and non-empty)
@@ -95,6 +97,7 @@ print(f'Recovered {len(good)}/{len(valid)} lines')
         --state-dir "$DATA_DIR/data/state" \
         2> >(filter_log >> "$LOG") || {
         echo "$(date -Iseconds) ERROR: analyze.py failed" >> "$LOG"
+        PHASE_FAILED=true
     }
 else
     echo "$(date -Iseconds) SKIP: no raw data for $DATE" >> "$LOG"
@@ -110,8 +113,13 @@ if [ -f "$DIGEST_FILE" ]; then
 else
     KEPT=0
 fi
+if [ "$PHASE_FAILED" = true ]; then
+    RUN_STATUS="failure"
+else
+    RUN_STATUS="success"
+fi
 cat > "$DATA_DIR/data/state/last_run.json" <<LASTRUN
-{"timestamp": "$(date -Iseconds)", "status": "success", "items_collected": $COLLECTED, "items_kept": $KEPT}
+{"timestamp": "$(date -Iseconds)", "status": "$RUN_STATUS", "items_collected": $COLLECTED, "items_kept": $KEPT}
 LASTRUN
 
 # Cleanup: prune old data per retention policy
