@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -40,12 +41,21 @@ _TYPE_ALIASES = {
 }
 
 
+def _slugify(name: str) -> str:
+    """Convert a source name to a URL-safe slug for use as an id."""
+    slug = name.lower()
+    slug = re.sub(r"[^a-z0-9]+", "-", slug)
+    return slug.strip("-")
+
+
 def _parse_source(raw: dict) -> Source:
     raw_type = raw.get("type", "rss")
     adapter_type = _TYPE_ALIASES.get(raw_type, raw_type)
+    name = raw.get("name", "")
+    source_id = raw.get("id") or _slugify(name) or "source"
     return Source(
-        id=raw["id"],
-        name=raw["name"],
+        id=source_id,
+        name=name,
         url=raw.get("url"),
         weight=raw.get("weight", 0.2),
         category=raw.get("category", "community"),
