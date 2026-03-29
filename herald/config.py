@@ -9,6 +9,8 @@ import yaml
 
 from herald.models import Source
 
+_PRESETS_DIR = Path(__file__).resolve().parent.parent / "presets"
+
 
 @dataclass
 class ClusterConfig:
@@ -50,12 +52,33 @@ def _parse_source(raw: dict) -> Source:
     )
 
 
+def _resolve_preset(preset_name: str) -> list[Source]:
+    """Load sources from a preset YAML file in the presets/ directory."""
+    preset_path = (_PRESETS_DIR / f"{preset_name}.yaml").resolve()
+    if not preset_path.is_relative_to(_PRESETS_DIR.resolve()):
+        raise ValueError(f"Invalid preset name: {preset_name}")
+    if not preset_path.exists():
+        import sys
+        print(f"herald: preset '{preset_name}' not found at {preset_path}", file=sys.stderr)
+        return []
+    with preset_path.open("r", encoding="utf-8") as f:
+        preset_data = yaml.safe_load(f) or {}
+    raw_sources = preset_data.get("sources") or preset_data.get("feeds") or []
+    return [_parse_source(s) for s in raw_sources]
+
+
 def load_config(path: Path) -> HeraldConfig:
     """Load config from a YAML file, merging any includes."""
     with path.open("r", encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
 
     config = _parse_config(data)
+
+    # Resolve preset sources if a preset is specified and no explicit sources
+    if not config.sources:
+        preset_name = data.get("preset")
+        if preset_name and preset_name != "blank":
+            config.sources = _resolve_preset(preset_name)
 
     # Merge sources from included files
     for include_path in data.get("includes", []):
@@ -69,7 +92,9 @@ def load_config(path: Path) -> HeraldConfig:
         try:
             with resolved.open("r", encoding="utf-8") as f:
                 inc_data = yaml.safe_load(f) or {}
-            inc_sources = [_parse_source(s) for s in inc_data.get("sources", [])]
+            # Accept 'feeds' as alias for 'sources'
+            raw = inc_data.get("sources") or inc_data.get("feeds") or []
+            inc_sources = [_parse_source(s) for s in raw]
             # Dedupe by id — main config wins over includes
             existing_ids = {s.id for s in config.sources}
             for src in inc_sources:
