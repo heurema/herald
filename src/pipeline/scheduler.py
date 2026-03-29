@@ -223,7 +223,9 @@ def install_scheduler(time: str, run_sh_path: str) -> bool:
         return _install_launchd(run_sh_path, time)
     elif plat == "linux":
         if shutil.which("systemctl"):
-            return _install_systemd(run_sh_path, time)
+            if _install_systemd(run_sh_path, time):
+                return True
+            # systemd user timers unavailable — fall back to cron
         return _install_cron(run_sh_path, time)
     return False
 
