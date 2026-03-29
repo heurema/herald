@@ -99,6 +99,12 @@ echo "  Installed"
 echo "[4/6] Setting up config at $CONFIG_DIR..."
 mkdir -p "$CONFIG_DIR"
 
+# Validate schedule time: HH:MM format (hour 0-23, minute 0-59)
+if ! [[ "$SCHEDULE_TIME" =~ ^([01][0-9]|2[0-3]):[0-5][0-9]$ ]]; then
+    echo "ERROR: Invalid time '$SCHEDULE_TIME'. Use HH:MM format (e.g., 06:00)."
+    exit 1
+fi
+
 if [ ! -f "$CONFIG_DIR/config.yaml" ]; then
     if [ "$PRESET" = "blank" ]; then
         cat > "$CONFIG_DIR/config.yaml" <<'EOF'
@@ -125,11 +131,6 @@ EOF
         # Validate preset name: alphanumeric, hyphens, underscores only
         if ! [[ "$PRESET" =~ ^[a-zA-Z0-9_-]+$ ]]; then
             echo "ERROR: Invalid preset name '$PRESET'. Use only letters, numbers, hyphens, underscores."
-            exit 1
-        fi
-        # Validate schedule time: HH:MM format (hour 0-23, minute 0-59)
-        if ! [[ "$SCHEDULE_TIME" =~ ^([01][0-9]|2[0-3]):[0-5][0-9]$ ]]; then
-            echo "ERROR: Invalid time '$SCHEDULE_TIME'. Use HH:MM format (e.g., 06:00)."
             exit 1
         fi
         cat > "$CONFIG_DIR/config.yaml" <<'ENDOFCONFIG'
