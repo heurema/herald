@@ -48,7 +48,7 @@ def resolve_config(
         base = {"feeds": [], "keywords": {}, "scoring": {"max_items": 10}, "retention": {}}
     else:
         if preset_dir is None:
-            preset_dir = Path(__file__).resolve().parent.parent / "presets"
+            preset_dir = Path(__file__).resolve().parent.parent.parent / "presets"
         preset_path = (preset_dir / f"{preset_name}.yaml").resolve()
         if not preset_path.is_relative_to(preset_dir.resolve()):
             raise ValueError(f"Invalid preset name: {preset_name}")
