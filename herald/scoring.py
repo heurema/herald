@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import math
 import re
+from urllib.parse import urlparse
 
 # Matches arxiv paper IDs like 2603.12345 in URLs from arxiv.org and mirrors
 _ARXIV_ID_RE = re.compile(r"(\d{4}\.\d{4,6})")
@@ -37,12 +38,16 @@ def _extract_paper_id(url: str) -> str | None:
     """Extract arxiv paper ID from URL if it belongs to a known mirror domain."""
     if not url:
         return None
-    for domain in _MIRROR_DOMAINS:
-        if domain in url:
-            m = _ARXIV_ID_RE.search(url)
-            if m:
-                return m.group(1)
-    return None
+    try:
+        hostname = urlparse(url).hostname or ""
+    except Exception:
+        return None
+    # Strip leading "www." for comparison
+    hostname = hostname.removeprefix("www.")
+    if hostname not in _MIRROR_DOMAINS:
+        return None
+    m = _ARXIV_ID_RE.search(url)
+    return m.group(1) if m else None
 
 
 def effective_source_count(sources_and_urls: list[tuple[str, str]]) -> int:
